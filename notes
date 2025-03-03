@@ -1,0 +1,28 @@
+Lecture 11/12
+EDA, Normality, Tidymodels
+
+
+Today we will focus on EDA from a statistical 
+persepctive by focusing on aspects of the 
+data needed to support the assumptions of 
+models we might use (e.g. lm).
+
+ggpubr is a packages in ggplot2
+-simplified based plots to look at the properties described
+-publication-ready interface for creating common statistical 
+ plots with minimal coding.
+ 
+Easily adds statistical tests (e.g., t-tests, ANOVA) 
+to plots with functions like "stat_compare_means()".
+
+
+ggpar() - modify themes, labels, legends
+ggarange(), ggexport() - arrange multiple plots in a grid and export them.
+ggscatter - integrate correlation coefficients and regression lines effortlessly
+ggpubr - compare groups by adding p-values, cofidence intervals, etc.
+
+EX.# Boxplot with p-values
+ggboxplot(ToothGrowth, x = "supp", y = "len",  color = "supp", palette = "jco") +
+  stat_compare_means(method = "t.test")
+
+
