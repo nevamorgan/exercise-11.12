@@ -25,4 +25,449 @@ EX.# Boxplot with p-values
 ggboxplot(ToothGrowth, x = "supp", y = "len",  color = "supp", palette = "jco") +
   stat_compare_means(method = "t.test")
 
+EX.# Scatter Plot with Regression Line
+ggscatter(ToothGrowth, x = "dose", y = "len",
+          add = "reg.line", conf.int = TRUE,
+          cor.coef = TRUE, cor.method = "pearson",
+          color = "supp", palette = "jco")
+EX.# Arranging Multiple Plots - ggarrange() to combine plots side by side
+p1 <- gghistogram(penguins, x = "body_mass_g", bins = 30, fill = "species")
+p2 <- ggboxplot(penguins, x = "species", y = "body_mass_g", fill = "species")
+
+ggarrange(p1, p2, ncol = 2, nrow = 2)
+
+
+`````
+
+What is EDA?
+- an approach to analyzing datasets to summarize their key characteristics
+- uses visualizations and statisical techniques to uncover patterns, anomalies, and relationships
+- helps in data cleaning, feature selection, and model choices (lm, non-lm, etc)
+1. Helps formulate hypotheses
+2. Guides data preprocessing decisions
+
+- supports feature enginneering
+  -> data normalization, data grouping, data cleaning
+  
+!!EDA CHECKLIST!!
+
+1. Develop a question
+- "is there a relationship between car weight and miles per gallon in the mtcars dataset?"
+
+2. Read in your data and check the structure
+- what are the dimesions (rows/columns)
+- what are the variable types
+- have character variable been coerced to factor, is this appropriate?
+- which numberic variable are continuous, which are integers, which are binary?
+
+3. Summarize the data
+using summary(), table(), vis_dat(), asks:
+ - missing observations?
+ - what is the range of numeric variables?
+ - do the ranges seem reasonable, or are there values that cause you to worry about data quality?
+Where are the means and medians of each variable with respect to their minimums and maximums?
+For factor and character variables: How many observations are there in each level or category?
+If it wasn’t clear from examining the structure of the data: which variables are continuous, integer or binary?
+Table the integer and binary variables: do the counts seem reasonable? If they don’t seem reasonable, then inspect the questionable rows. 
+
+4. Look at the top and bottom of your data using:
+head() and tail()
+
+using skimr::skim() - overview of data structure and missing values
+
+5. Try to answer your question using descriptive measures.
+evaluating distributions, central tendency, and variation
+
+6. Follow up with any additional question that have popped up
+
+Key Steps in EDA
+1️⃣ Understand Data Structure
+– Check types, dimensions, missing values. 
+  - glimpse(), str(), summary(), vis_dat()
+
+2️⃣ Summary Statistics
+– Mean, median, variance, skewness, kurtosis. 
+  - skimr::skim(), summary(), table()
+
+3️⃣ Visualizations
+– Histograms, box plots, scatter plots, correlation matrices. 
+  - ggplot2, ggpubr, ggcorrplot
+
+4️⃣ Identify Data Issues
+– Outliers, missing data, inconsistencies. 
+  - vis_dat(), outliers::detect_outliers()
+
+5️⃣ Transformations & Feature Engineering
+– Scaling, encoding, derived features. 
+  - recipes, tidymodels
+
+
+Summary Stats:
+mean, median, mode, and standard deviation
+
+skimr - overview of data
+
+library(skimr)
+skimr::skim(penguins, body_mass_g)
+
+── Data Summary ────────────────────────
+                           Values  
+Name                       penguins
+Number of rows             344     
+Number of columns          8       
+_______________________            
+Column type frequency:             
+  numeric                  1       
+________________________           
+Group variables            None    
+
+── Variable type: numeric ───────
+  skim_variable n_missing
+1 body_mass_g           2
+  complete_rate  mean   sd   p0
+1         0.994 4202. 802. 2700
+   p25  p50  p75 p100 hist 
+1 3550 4050 4750 6300 ▃▇▆▃▂
+
+
+Central Tendency - best representation of the center of the data
+- Measures of central tendency describe the center of a distribution.
+- Common measures include mean, median, and mode.
+  -> Mean (symmetric distibutions w/out outliers): Average of all values. 
+  -> Median (skewed distibution - robust to outliers): Middle value when data is sorted.
+  -> Mode (categorical data): Most frequent value.
+
+Variabilty - Measures of variability describe the spread of data.
+- Common measures include range, variance, standard deviation, and interquartile range (IQR).
+  -> Range (median): Difference between the maximum and minimum values.
+  -> Variance (mean): Average of squared differences from the mean.
+  -> Standard Deviation (sd): Square root of variance. Measures spread around the mean.
+  -> IQR (inner quartile range): Range of the middle 50% of data. Robust to outliers.
+
+
+Visualization
+ - Univariate (histograms, box plots)
+  -> focuses on a single variable at a time
+ - Bivariate (scatter plots, pair plots)
+ - Multivariate (heatmaps, PCA)
+
+
+1. Univariate Analysis (Distribution of Bill Length)
+
+a. Histograms - common visualization for univariate analysis
+# Histogram of bill length
+ggdensity(penguins, x = "bill_length_mm", add = "mean") + 
+  labs(title = "Distribution of Bill Length", x = "Bill Length (mm)")
+
+- has a bimodel visualization surrounding the mean
+
+b. Boxplots - useful for visualizing the distribution of a variable by groups
+# Boxplot of bill length by species
+ggboxplot(penguins, x = "species", y = "bill_length_mm",
+          color = "species", palette = "jco") +
+  labs(title = "Bill Length Distribution by Species")
+
+
+2. Bivariate Analysis - Bill Length vs. Depth
+• Categorical + Categorical -> Bar Plot (stacked or side-by-side) 
+• Categorical + Continuous -> Box Plot; Bar Plot (with summary statistics) 
+• Continuous + Continuous -> Scatter Plots and Line Plots
+
+a. Scatter plots and regression lines:
+# Scatter plot with regression line
+ggscatter(penguins, x = "bill_length_mm", y = "bill_depth_mm",
+          color = "species", add = "reg.line", conf.int = TRUE) +
+  labs(title = "Bill Length vs. Bill Depth", 
+       x = "Bill Length (mm)", y = "Bill Depth (mm)")
+
+
+3. Multivariate Analysis:
+
+ggscatter(penguins, x = "bill_length_mm", y = "bill_depth_mm",
+          color = "species", add = "reg.line", ellipse = TRUE, conf.int = TRUE) +
+  labs(title = "Bill Length vs. Bill Depth", 
+       x = "Bill Length (mm)", y = "Bill Depth (mm)") +
+  facet_wrap(~species)
+  
+4. Correlation Analysis:
+- measures the strength and direction of relationships b/w variables
+- Coefficients range from -1 to 1
+  - 1 indicates strong positive correlation
+  - 0 indicated no correlation
+  - (-1) indicates strong negative correlation
+
+penguins |> 
+  select(where(is.numeric)) |> 
+  vis_cor()
+
+Identify Data Issues:
+
+Duplicates?
+df <- distinct(df) 
+
+Missing Data?
+#Removal
+df <- drop_na(df)
+
+#Imputation
+df <- mutate(df, x = if_else(is.na(x), mean(x, na.rm = TRUE), x))
+
+Outlier Detection:
+IQR, Z-scores, clustering-based methods.
+
+
+DATA NORMALITY!!!
+
+Central Limit Theorem:
+- the sampling distribution of the sample mean
+  approaches a normal distribution as the sample
+  size increases, regardless of the original population
+  distribution.
+- Fundamental in stats as it justifies using a 
+  normal-based inference even when the data itself 
+  is not normally distributed.
+  
+EX. Uniform Distribution:
+A uniform distribution is being used, meaning every value in [0,1] is equally likely.
+We take 10,000 random samples, each of size [n = 2], and compute the sample mean for each.
+The histogram visualizes the distribution of these means.
+Since n is small, the distribution still looks somewhat uniform.
+
+set.seed(123)  # For reproducibility
+n <- 2  # Initial small sample size
+sims <- 10000  # Number of samples
+
+# This code generates a histogram of the sampling distribution of the mean
+means <- replicate(sims, mean(runif(n)))
+
+ggplot(data.frame(means), aes(x = means)) +
+  geom_histogram(binwidth = 0.05, fill = "steelblue", color = "black", alpha = 0.7) +
+  ggtitle(paste("Sampling Distribution of Mean (n =", n, ")")) +
+  theme_minimal()
+
+EX. Increasing Sample Size:
+This time, we run the same simulation for three different sample sizes: n = 2, 5, 30.
+Each subplot shows the histogram of sample means for different n values.
+The red curve is the theoretical normal distribution (what we expect under the CLT).
+As n increases, the sample mean distribution becomes more normal, even though the original data was uniformly distributed.
+
+n_values <- c(2, 5, 30)
+par(mfrow = c(1, 3)) 
+
+for (n in n_values) {
+  means <- replicate(sims, mean(runif(n)))
+  hist(means, breaks = 30, main = paste("n =", n), col = "lightblue", probability = TRUE)
+  curve(dnorm(x, mean = 0.5, sd = sqrt(1/12/n)), add = TRUE, col = "red", lwd = 2)
+}
+
+```
+
+Understanding Data Normality
+- how can we best understand the mean and standard deviation
+of a data's distribution.
+
+Mean: ceneter of distribution
+SD: measure of the spread
+# Generate a normal distribution and visualize it
+set.seed(123)
+data <- rnorm(1000, mean = 50, sd = 10)
+
+Why set a seed?
+- to ensure reproducibility, we set a seed value.
+- Ensures that random number generation is consistent across runs.
+- Facilitates debugging and verification of statistical methods.
+- Allows for reproducibility in machine learning, Monte Carlo simulations, bootstrapping, and other applications.
+
+EX. 
+set.seed(42)  # Setting seed for reproducibility
+sample1 <- rnorm(10)
+
+set.seed(42)
+sample2 <- rnorm(10)
+
+set.seed(43)
+sample3 <- rnorm(10)
+
+identical(sample1, sample2) 
+[1] TRUE
+identical(sample1, sample3) 
+[1] FALSE
+
+```
+
+Why Normality Matters:
+techniques: t-test and ANOVA, linear regression (lm),
+            principal component analysis (PCA), and
+            confidence intervals.
+            
+- when data deviates from normality, these methods may
+  produce inaccurate results.
+  
+
+Assessing Normality:
+- visual: histograms or boxplots or Q-Q Plots
+  EX. 
+  a. gghistogram(data, y = "density", 
+            bins = 30, fill = "skyblue", 
+            add = "mean",
+            main = "Histogram of Normally Distributed Data",
+            color = "black", add_density = TRUE) 
+  
+  b. ggboxplot(data, title = "Boxplot of Data", fill = "lightgreen")
+
+  c. Q-Q Plots: compare distribution of a dataset to a normal dist.
+  EX. ggqqplot(group_by(penguins, species), x = 'body_mass_g', color = "species") 
+
+Statistical Tests
+- Shapiro-Wilk (good for small samples)
+
+  EX.
+  # Shapiro Wilks Test
+  shapiro.test(data)
+
+    Shapiro-Wilk normality test
+
+  data:  data
+  W = 0.99838, p-value = 0.4765
+
+Nest/Map Examples:
+penguins |> 
+  drop_na() |>
+  nest(data = -species) |>
+  mutate(test = map(data, ~shapiro.test(.x$body_mass_g)),
+         glance_shapiro = map(test, broom::glance)) %>%
+  unnest(glance_shapiro)
+
+# A tibble: 3 × 6
+  species   data               test    statistic p.value method                 
+  <fct>     <list>             <list>      <dbl>   <dbl> <chr>                  
+1 Adelie    <tibble [146 × 7]> <htest>     0.981  0.0423 Shapiro-Wilk normality…
+2 Gentoo    <tibble [119 × 7]> <htest>     0.986  0.261  Shapiro-Wilk normality…
+3 Chinstrap <tibble [68 × 7]>  <htest>     0.984  0.561  Shapiro-Wilk normality…
+
+````
+Dealing with Non-Normal Data:
+
+1. ####Transformation:#### (what we will use directly - you type it!)
+  - Log transformation (useful for right-skewed data)
+  - Square root transformation
+  - Box-Cox transformation
+  - Exponential Transformation: Raising values to a power greater than 1.
+  - Reflection and Log Transformation: If data has negative values, reflect it by subtracting from a constant before applying log transformation.
+
+    EX. 
+    # Log Transformation
+    log_data <- log(data)
+
+    #Sqrt Transformation
+    sqrt_data <- sqrt(data)
+
+    # Box-Cox Transformation
+    library(MASS)
+    bc <- boxcox(lm(data ~ 1), lambda = seq(-2, 2, by = 0.1))
+
+    # Exponential Transformation
+    exp_data        <- data^2  
+
+    # Reflection and Log Transformation
+    reflected_data  <- max(data) - data + 1
+    log_transformed <- log(reflected_data)
+
+2. Nonparametric Methods:
+  - Nonparametric methods are useful in environmental science due to the prevalence of skewed, censored, or ordinal data.
+  - They are often used in place of parametric tests when data is not normally distributed.
+
+    EX.
+    a. #Mann-Whitney/Wilcoxon test (instead of t-test): Compares two groups when data is not normally distributed.
+        wilcox.test(Ozone ~ Month, data = airquality, subset = Month %in% c(5, 8))
+
+            Wilcoxon rank sum test with continuity correction
+
+        data:  Ozone by Month
+        W = 127.5, p-value = 0.0001208
+        alternative hypothesis: true location shift is not equal to 0
+
+    b. #Kruskal-Wallis Test (instead of ANOVA): Compares multiple groups when data is not normally distributed.
+        kruskal.test(Ozone ~ Month, data = airquality)
+
+            Kruskal-Wallis rank sum test
+
+        data:  Ozone by Month
+        Kruskal-Wallis chi-squared = 29.267, df = 4, p-value = 6.901e-06
+
+    c. #Spearman’s Rank Correlation: Measures the strength and direction of a relationship between two variables when data is not normally distributed or is measured on an ordinal scale.
+        cor.test(airquality$Ozone, airquality$Temp, method = "spearman")
+
+            Spearman's rank correlation rho
+
+        data:  airquality$Ozone and airquality$Temp
+        S = 58778, p-value < 2.2e-16
+        alternative hypothesis: true rho is not equal to 0
+        sample estimates:
+            rho 
+        0.774043 
+
+3. ###Resampling Methods:### (we will understand this indirectly)
+  - bootstrepping can provide robust estimates without assuming normality
+
+    EX.
+    library(boot)
+    boot_mean <- function(data, indices) {
+      return(mean(data[indices]))
+    }
+    results <- boot(data, boot_mean, R = 1000)
+    plot(results)
+
+
+`````
+What is Skewness?
+- measures the asymmetry of a data distribution
+  -> Positive Skew: Tail on the right (longer right tail)
+  -> Negative Skew: Tail on the left (longer left tail)
+  -> Symmetric: No skew (bell-shaped, normal distribution)
+- helps determine data transformation needs
+- influences interpretation of summary statistics like mean and median
+
+Methods to Assess Skewness in R
+1. Descriptive Statistics:
+  - moments::skewness() / moments::agostino.test()
+  - The null hypothesis (H₀) states that the data is symmetrically distributed (i.e., skewness = 0).
+  - The alternative hypothesis (H₁) states that the data is not symmetrically distributed (i.e., skewness ≠ 0).
+  - A statistical test for skewness can be performed using the D’Agostino test in R:
+
+moments::agostino.test(na.omit(penguins$body_mass_g))
+
+    D'Agostino skewness test
+
+data:  na.omit(penguins$body_mass_g)
+skew = 0.46826, z = 3.44537, p-value = 0.0005703
+alternative hypothesis: data have a skewness
+
+Methods to Assess Skewness in R
+2. Visualizations:
+Histograms / Density Plots
+Right-skewed: Tail extends to the right.
+Left-skewed: Tail extends to the left.
+Symmetric: Roughly bell-shaped.
+Boxplots
+Right-skewed: Longer right whisker, median closer to Q1.
+Left-skewed: Longer left whisker, median closer to Q3.
+Q-Q Plots
+If points deviate from the 45-degree line, the data is skewed.
+Right-skewed: Points curve above the line.
+Left-skewed: Points curve below the line.
+
+`````
+
+TIDYMODELS:
+
+*how tidymodels can perform transformations simplier
+- We will start with tidymodels which is a suite of packages that provide a consistent, organized approach to modeling in R.
+- To dip our toes into this framework we will start with data normalization, a key step in preprocessing data for machine learning
+
+"tidymodels" - builts on the "tidyverse" principles
+
+  Key Packages:
+  
+
 

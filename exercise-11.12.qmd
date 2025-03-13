@@ -1,29 +1,174 @@
 ---
-title: "Exercise 11 & 12"
+title: "Daily Exercise 11 & 12"
 author: "Neva Morgan"
-date: "2025-03-03"
-format: html
-execute:
-  echo: true
+date: "2025-03-12"
+format: 
+  html:
+    self-contained: true
 ---
+# Assignment: Daily Exercise 11/12
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
+###### Beginning gargin:
 ```{r}
-1 + 1
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(ggpubr)
+library(broom)
+library(purrr)
+library(visdat)
+library(tidymodels)
 ```
 
-You can add options to executable code like this
 
+
+#### Part 1: Normality Testing
+###### Load the airquality dataset in R. What does this dataset represent? Explore its structure using functions like str() and summary().
+####### This data represents the daily readings of air quality values for New York City, as obtained from the NY State Department of Conservation (ozone data) and the National Weather Service (meteorlogical data). It consists of 153 data records measured by 6 variable testers: Ozone, Solar Radiation, Wind, Temperature, Month, and Day of the recording. This was collected from May 1, 1973 to September 30th, 1973.
 ```{r}
-#| echo: false
-2 * 2
+data <- airquality
+
+str(airquality)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+
+###### Perform a Shapiro-Wilk normality test on the following variables: Ozone, Temp, Solar.R, and Wind.
+```{r}
+data(airquality)
+
+shapiro.test(na.omit(airquality$Ozone))
+shapiro.test(na.omit(airquality$Solar.R))
+shapiro.test(na.omit(airquality$Wind))
+shapiro.test(na.omit(airquality$Temp))
+```
+
+###### What is the purpose of the Shapiro-Wilk test?
+####### A Shapiro-Wilk test, assumes the data is distributed normally, and serves to test whether that is the case within the data. The W representing if the data is close to normal distribution = 1, something that is further from normal distribution = 0.
+
+
+###### What are the null and alternative hypotheses for this test?
+####### The null fo this hypotheses for this test assumes that the data is distributed normally. The alternative hypothesis is that the data is distributed abnormally or another plot style.
+
+
+###### Interpret the p-values. Are these variables normally distributed?
+####### Temp, Solar Rad, and Ozone are statistically significant in understanding the data as it's concerned for normal distribution should be rejected as a hypothesis. The W value suggests otherwise, with Temp, Solar Rad, and Wind having the closest values to 1 symbolizing that they are close to being normally distributed.
+
+#### Part 2: Data Transformation and Feature Engineering
+
+###### Create a new column with case_when tranlating the Months into four seasons (Winter (Nov, Dec, Jan), Spring (Feb, Mar, Apr), Summer (May, Jun, Jul), and Fall (Aug, Sep, Oct)).
+```{r}
+airquality <- airquality %>%
+  mutate(Season = case_when(
+    Month %in% c(11, 12, 1) ~ "Winter",
+    Month %in% c(2, 3, 4) ~ "Spring",
+    Month %in% c(5, 6, 7) ~ "Summer",
+    Month %in% c(8, 9, 10) ~ "Fall",
+    TRUE ~ NA_character_
+  )) %>%
+  mutate(Season = as.factor(Season)) 
+```
+
+###### Use table to figure out how many observations we have from each season.
+```{r}
+table(airquality$Season)
+```
+####### There are 61 observations labeled Fall, and 92 observations recorded as Summer.
+
+
+#### Part 3: Data Preprocessing
+###### Normalize the predictor variables (Temp, Solar.R, Wind, and Season) using a recipe
+```{r}
+airquality_obj <- (recipe(Ozone ~ Solar.R + Wind + Temp + Season, data = airquality) |>
+  step_impute_mean(all_numeric_predictors()) |>
+  step_dummy(all_factor_predictors()) |>
+  step_normalize(all_numeric_predictors())) 
+
+```
+
+###### What is the purpose of normalizing data?
+####### Normalizing data is crucial for improving model convergence (scaling for different features of machine learning models), preventing feature domination (can fix biasis associated with large magnituded variables), enhancing interpretability (making better model understandings), facillitating in distance-based methods(k-nearest neighbors, principal componenet analysis, provide algorithsm for when data is normalized).
+
+###### What function can be used to impute missing values with the mean?
+####### step_impute_mean() will be useful to fill missing values.
+
+###### prep and bake the data to generate a processed dataset.
+```{r}
+aq_prep_recipe     <- prep(airquality_obj, training = airquality) 
+
+aq_normalized_data <- bake(aq_prep_recipe, new_data = NULL) |> 
+  mutate(season = airquality$season) |> 
+  drop_na()
+
+head(aq_normalized_data)
+```
+
+###### Why is it necessary to both prep() and bake() the recipe?
+####### Prep is important to prepare the recipe we are making and have it apply to the airquality data set to get normalized data. Bake is important to transform the data with the prep that was just made, applying it to the dataset we just prepped for.
+
+
+#### Part 4: Building a Linear Regression Model
+###### Fit a linear model using Ozone as the response variable and all other variables as predictors. Remeber that the . notation can we used to include all variables.
+
+```{r}
+(aq_model = lm(Ozone ~ . , data = aq_normalized_data) )
+
+glance(aq_model)
+
+```
+###### Interpret the model summary output (coefficients, R-squared, p-values) in plain language
+####### The model summary shows us the many variables associated with the model we just created for Ozone. The coefficients represent where each variable (Solar.R, WInd, Temp, and Season) is dispearsed on the graph as ozone is responded against the main airquality data. R-swared values associated with each varible can also indicate how spread the data points are from a linear model, R = 0 means no correlation between points, R = 1 means there is 100% correleation between points making a straight line. P-values will represent how spread the data distribution is in terms of statisitical significance, any p-value that is under 0.05 is considered statistically significant enough to rule out the null hypothesis. 
+
+
+
+#### Part 5: Model Diagnostics
+###### Use broom::augment to suppliment the normalized data.frame with the fitted values and residuals.
+
+```{r}
+(aq_pred <- augment(aq_model, aq_normalized_data))
+```
+
+
+###### Extract the residuals and visualize their distribution as a histogram and qqplot.
+```{r}
+aq_residuals <- aq_pred$.resid
+
+p1 <- ggplot(aq_pred, aes(x = .resid)) +
+  geom_histogram(binwidth = 1, fill = "darkred", color = "black", alpha = 0.7) +
+  labs(title = "Histogram of Residuals", x = "Residuals", y = "Fit") +
+  theme_bw()
+
+p2 <- ggplot(aq_pred, aes(sample = .resid)) +
+  geom_qq(color = "darkred") +
+  geom_qq_line() +
+  labs(title = "QQ Plot of Residuals") +
+  theme_bw()
+```
+
+
+###### Use ggarange to plot this as one image and interpret what you see in them.
+
+```{r}
+ggarrange(p1, p2, ncol = 2, nrow = 2)
+```
+####### We can interpret from the histogram that most of the data falls under what is determined for a residual, creating a right-distribution. The QQ Plot can tell us that most of the data is situated near the mean based from standard deviation.
+
+
+###### Create a scatter plot of actual vs. predicted values using ggpubr with the following setting:
+```{r}
+ggscatter(aq_pred, x = "Ozone", y = ".fitted",
+          add = "reg.line", conf.int = TRUE,
+          cor.coef = TRUE, cor.method = "spearman",
+          ellipse = TRUE) +
+  labs(title = "Actual vs. Predicted Ozone Values",
+       x = "Actual Ozone",
+       y = "Predicted Ozone") +
+  theme_bw()
+```
+
+###### How strong of a model do you think this is?
+####### I think this model is good, but can be hard to interpret if I wasn't already understanding what this data meant. I think these types of models are beneficial in visualizing how data changes based on what is predicted vs actually recorded in field. 
+
+
+
+
